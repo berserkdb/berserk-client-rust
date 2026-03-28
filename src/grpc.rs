@@ -68,6 +68,7 @@ mod inner {
             };
 
             let mut req = tonic::Request::new(request);
+            req.set_timeout(self.config.timeout);
 
             if let Some(username) = &self.config.username {
                 if let Ok(val) = username.parse::<MetadataValue<tonic::metadata::Ascii>>() {
