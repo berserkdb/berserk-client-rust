@@ -1,0 +1,172 @@
+syntax = "proto3";
+
+package query;
+
+import "dynamic_value.proto";
+
+service QueryService {
+  rpc ExecuteQuery(ExecuteQueryRequest) returns (stream ExecuteQueryResultFrame);
+}
+
+message ExecuteQueryRequest {
+  string query = 1;
+
+  string since = 2;
+  string until = 3;
+  string timezone = 4;
+}
+
+// A single frame in the stream of results for a query.
+message ExecuteQueryResultFrame {
+  string request_id = 1;
+  oneof payload {
+    // TableSchema contains the schema of one table in the results and will always be
+    // sent before the associated RowBatches.
+    TableSchema schema = 2;
+    // RowBatch contains the rows. Note that each RowBatch belongs to a result iteration
+    // and for every new result iteration, the old set of RowBatches should be discarded.
+    // We need this setup of a result set of multiple rowbatches to avoid hitting the 4MB
+    // limit in gRPC messages.
+    RowBatch batch = 3;
+
+    // If done is sent, then this stream can be closed and no more events will be sent.
+    Completion done = 5;
+
+    /// Aux events for progress, etc.
+    // progress contains the progress since the last progress was sent.
+    Progress progress = 4;
+    // error indicates that some error happened that impacted the result set.
+    Error error = 6;
+    // metadata carries warnings or partial failures for the current result set.
+    ResultMetadata metadata = 7;
+  }
+}
+
+message TableSchema {
+  string name = 1;
+  repeated Column columns = 2;
+}
+
+message Column {
+  string name = 1;
+  ColumnType type = 2;
+  bool nullable = 3;
+}
+
+enum ColumnType {
+  COLUMN_TYPE_UNSPECIFIED = 0;
+  COLUMN_TYPE_BOOL = 1;
+  COLUMN_TYPE_INT32 = 2;
+  COLUMN_TYPE_INT64 = 3;
+  COLUMN_TYPE_DOUBLE = 4;
+  COLUMN_TYPE_STRING = 5;
+  COLUMN_TYPE_DATETIME = 6;
+  COLUMN_TYPE_TIMESPAN = 7;
+  COLUMN_TYPE_GUID = 8;
+  COLUMN_TYPE_DYNAMIC = 9;
+}
+
+message RowBatch {
+  string table_name = 1;
+  string result_iteration_id = 2;
+  repeated ValueRow rows = 3;
+  bool is_iteration_complete = 4;
+}
+
+message ValueRow {
+  repeated segment_files.TTDynamic values = 1;
+}
+
+message Progress {
+  uint64 rows_processed = 1;
+  uint64 chunks_total = 2;
+  uint64 chunks_scanned = 3;
+  uint64 chunks_skipped_range = 4;
+  uint64 chunks_skipped_bloom = 5;
+  uint64 chunks_skipped_shar = 6;
+  uint64 predicate_checks = 7;
+  bool short_circuit_completion = 9;
+  uint64 chunk_scanned_raw_body_size = 10;
+  uint64 chunk_skipped_raw_body_size = 11;
+  uint64 chunk_skipped_compressed_size = 12;
+  uint64 chunk_scan_time_nanos = 13;
+  uint64 query_time_nanos = 14;
+  uint64 chunk_scanned_compressed_size = 15;
+  optional BinProgress bin_progress = 16;
+  optional uint64 queue_wait_nanos = 17;
+  optional PlanningProgress planning_progress = 18;
+  uint64 bloom_filter_bytes = 19;
+  uint64 merge_time_nanos = 20;
+  uint64 chunks_empty_scan = 21;
+  uint64 chunks_errored = 22;
+  uint64 chunks_skipped_required_fields = 23;
+  repeated OperatorDiagnostics operator_diagnostics = 24;
+}
+
+message OperatorDiagnostics {
+  string kind = 1;
+  uint32 operator_id = 2;
+  repeated KeyValue values = 3;
+}
+
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}
+
+message PlanningProgress {
+  uint64 segments_done = 1;
+  uint64 segments_total = 2;
+}
+
+message BinProgress {
+  sint64 first_bin_start = 1;
+  uint64 bin_span = 2;
+  bytes completion_percentages = 3;
+}
+
+message Completion {
+}
+
+message Error {
+  string code = 1;
+  string title = 2;
+  string support_ticket_id = 4;
+  string message = 5;
+  Location location = 7;
+  string details = 8;
+}
+
+message Location {
+  uint32 start_byte = 1;
+  uint32 end_byte = 2;
+  uint32 start_line = 3;
+  uint32 start_column = 4;
+  uint32 end_line = 5;
+  uint32 end_column = 6;
+}
+
+message PartialFailure {
+  repeated string segment_ids = 1;
+  string message = 2;
+}
+
+message VisualizationMetadata {
+  optional string visualization_type = 1;
+  map<string, string> properties = 2;
+}
+
+message ResultMetadata {
+  repeated PartialFailure partial_failures = 1;
+  optional VisualizationMetadata visualization = 2;
+  repeated QueryWarning warnings = 3;
+}
+
+message QueryWarning {
+  uint32 operator_id = 1;
+  optional uint32 branch_index = 2;
+  string kind = 3;
+  optional Location location = 4;
+  string message = 5;
+  string details = 6;
+}

@@ -1,0 +1,33 @@
+[package]
+name = "berserk-client"
+version = "0.1.0"
+edition = "2021"
+description = "Berserk query client for Rust"
+license = "Apache-2.0"
+repository = "https://github.com/berserkdb/berserk-client-rust"
+
+[features]
+default = ["grpc"]
+grpc = ["dep:tonic", "dep:prost", "dep:tokio-stream"]
+http = ["dep:reqwest"]
+
+[dependencies]
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt", "macros", "sync"] }
+
+# gRPC dependencies
+tonic = { version = "0.12", optional = true }
+prost = { version = "0.13", optional = true }
+tokio-stream = { version = "0.1", optional = true }
+
+# HTTP dependencies
+reqwest = { version = "0.12", features = ["json"], optional = true }
+
+[build-dependencies]
+tonic-build = "0.12"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
