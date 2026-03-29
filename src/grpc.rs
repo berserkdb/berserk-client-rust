@@ -13,8 +13,8 @@ mod inner {
     }
 
     /// Generated proto types for dynamic values.
-    pub mod segment_proto {
-        tonic::include_proto!("segment_files");
+    pub mod berserk_proto {
+        tonic::include_proto!("berserk");
     }
 
     use query_proto::query_service_client::QueryServiceClient as ProtoClient;
@@ -189,9 +189,9 @@ mod inner {
     fn convert_column_type(proto_type: i32) -> ColumnType {
         match query_proto::ColumnType::try_from(proto_type) {
             Ok(query_proto::ColumnType::Bool) => ColumnType::Bool,
-            Ok(query_proto::ColumnType::Int32) => ColumnType::Int,
-            Ok(query_proto::ColumnType::Int64) => ColumnType::Long,
-            Ok(query_proto::ColumnType::Double) => ColumnType::Real,
+            Ok(query_proto::ColumnType::Int) => ColumnType::Int,
+            Ok(query_proto::ColumnType::Long) => ColumnType::Long,
+            Ok(query_proto::ColumnType::Real) => ColumnType::Real,
             Ok(query_proto::ColumnType::String) => ColumnType::String,
             Ok(query_proto::ColumnType::Datetime) => ColumnType::Datetime,
             Ok(query_proto::ColumnType::Timespan) => ColumnType::Timespan,
@@ -202,20 +202,20 @@ mod inner {
         }
     }
 
-    fn convert_value(dyn_val: segment_proto::TtDynamic) -> Value {
+    fn convert_value(dyn_val: berserk_proto::BqlValue) -> Value {
         match dyn_val.value {
-            Some(segment_proto::tt_dynamic::Value::TtNull(_)) | None => Value::Null,
-            Some(segment_proto::tt_dynamic::Value::TtBool(b)) => Value::Bool(b),
-            Some(segment_proto::tt_dynamic::Value::TtInt(i)) => Value::Int(i),
-            Some(segment_proto::tt_dynamic::Value::TtLong(l)) => Value::Long(l),
-            Some(segment_proto::tt_dynamic::Value::TtDouble(d)) => Value::Real(d),
-            Some(segment_proto::tt_dynamic::Value::TtString(s)) => Value::String(s),
-            Some(segment_proto::tt_dynamic::Value::TtTimestamp(t)) => Value::Long(t as i64),
-            Some(segment_proto::tt_dynamic::Value::TtTimespan(t)) => Value::Long(t as i64),
-            Some(segment_proto::tt_dynamic::Value::TtArray(arr)) => {
+            Some(berserk_proto::bql_value::Value::NullValue(_)) | None => Value::Null,
+            Some(berserk_proto::bql_value::Value::BoolValue(b)) => Value::Bool(b),
+            Some(berserk_proto::bql_value::Value::IntValue(i)) => Value::Int(i),
+            Some(berserk_proto::bql_value::Value::LongValue(l)) => Value::Long(l),
+            Some(berserk_proto::bql_value::Value::RealValue(d)) => Value::Real(d),
+            Some(berserk_proto::bql_value::Value::StringValue(s)) => Value::String(s),
+            Some(berserk_proto::bql_value::Value::DatetimeValue(t)) => Value::Long(t as i64),
+            Some(berserk_proto::bql_value::Value::TimespanValue(t)) => Value::Long(t as i64),
+            Some(berserk_proto::bql_value::Value::ArrayValue(arr)) => {
                 Value::Array(arr.values.into_iter().map(convert_value).collect())
             }
-            Some(segment_proto::tt_dynamic::Value::TtPropertybag(bag)) => {
+            Some(berserk_proto::bql_value::Value::BagValue(bag)) => {
                 let map = bag
                     .properties
                     .into_iter()
