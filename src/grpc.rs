@@ -65,6 +65,11 @@ mod inner {
                 since: since.unwrap_or_default().to_string(),
                 until: until.unwrap_or_default().to_string(),
                 timezone: timezone.to_string(),
+                database: Some(berserk_proto::DatabaseRef {
+                    identifier: Some(berserk_proto::database_ref::Identifier::Name(
+                        self.config.database.clone(),
+                    )),
+                }),
             };
 
             let mut req = tonic::Request::new(request);
