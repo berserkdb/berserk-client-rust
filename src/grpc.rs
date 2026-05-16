@@ -65,6 +65,7 @@ mod inner {
                 since: since.unwrap_or_default().to_string(),
                 until: until.unwrap_or_default().to_string(),
                 timezone: timezone.to_string(),
+                database: None,
             };
 
             let mut req = tonic::Request::new(request);
