@@ -15,6 +15,9 @@ pub struct Config {
     pub connect_timeout: Duration,
     /// Client name sent as x-bzrk-client-name header
     pub client_name: Option<String>,
+    /// Database to resolve unqualified table names against. Sent on every
+    /// ExecuteQueryRequest as `database.name`. Defaults to "default".
+    pub database: String,
 }
 
 impl Default for Config {
@@ -26,6 +29,7 @@ impl Default for Config {
             alive_timeout: Duration::from_secs(30),
             connect_timeout: Duration::from_secs(10),
             client_name: Some("berserk-client-rust".to_string()),
+            database: "default".to_string(),
         }
     }
 }
@@ -55,6 +59,11 @@ impl Config {
 
     pub fn with_client_name(mut self, name: impl Into<String>) -> Self {
         self.client_name = Some(name.into());
+        self
+    }
+
+    pub fn with_database(mut self, database: impl Into<String>) -> Self {
+        self.database = database.into();
         self
     }
 
