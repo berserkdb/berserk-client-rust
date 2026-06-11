@@ -1,3 +1,8 @@
+// Proto codegen is only needed for the grpc transport. The whole
+// script is feature-gated so http-only builds neither compile
+// tonic-build nor require `protoc` on the build host.
+
+#[cfg(feature = "grpc")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let include_dirs = &["proto/"];
 
@@ -19,3 +24,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[cfg(not(feature = "grpc"))]
+fn main() {}

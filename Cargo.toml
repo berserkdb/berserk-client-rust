@@ -8,7 +8,7 @@ repository = "https://github.com/berserkdb/berserk-client-rust"
 
 [features]
 default = ["grpc"]
-grpc = ["dep:tonic", "dep:prost", "dep:tokio-stream"]
+grpc = ["dep:tonic", "dep:prost", "dep:tokio-stream", "dep:tonic-build"]
 http = ["dep:reqwest"]
 
 [dependencies]
@@ -27,7 +27,7 @@ tokio-stream = { version = "0.1", optional = true }
 reqwest = { version = "0.12", features = ["json"], optional = true }
 
 [build-dependencies]
-tonic-build = "0.12"
+tonic-build = { version = "0.12", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
