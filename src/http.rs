@@ -11,11 +11,14 @@ mod inner {
         client: reqwest::Client,
     }
 
+    /// Kusto v2 REST request body. `db` is required by the API — the
+    /// server 400s on a missing or empty value (it's a database NAME,
+    /// resolved server-side; the client always has one via
+    /// `Config::database`).
     #[derive(Serialize)]
     struct KustoV2Request {
+        db: String,
         csl: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        db: Option<String>,
     }
 
     /// A frame in the v2 response array.
@@ -64,8 +67,8 @@ mod inner {
             let url = format!("{}/v2/rest/query", self.config.normalized_endpoint());
 
             let body = KustoV2Request {
+                db: self.config.database.clone(),
                 csl: query.to_string(),
-                db: None,
             };
 
             let mut req = self.client.post(&url).json(&body);

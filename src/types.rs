@@ -64,7 +64,7 @@ impl fmt::Display for ColumnType {
 }
 
 /// A dynamic value from query results.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Value {
     Null,
