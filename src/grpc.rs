@@ -58,7 +58,22 @@ mod inner {
             timezone: &str,
         ) -> Result<QueryResponse> {
             let channel = self.channel().await?;
-            let mut client = ProtoClient::new(channel);
+            // The gateway mounts the gRPC surface under a path prefix
+            // (/api/grpc/query.QueryService/ExecuteQuery). tonic joins
+            // the origin's path with the method path, so the prefix
+            // rides on the origin URI.
+            let mut client = if self.config.grpc_path_prefix.is_empty() {
+                ProtoClient::new(channel)
+            } else {
+                let origin = format!(
+                    "{}{}",
+                    self.config.normalized_endpoint(),
+                    self.config.grpc_path_prefix
+                )
+                .parse::<tonic::codegen::http::Uri>()
+                .map_err(|e| Error::GrpcConnection(format!("invalid origin: {e}")))?;
+                ProtoClient::with_origin(channel, origin)
+            };
 
             let request = query_proto::ExecuteQueryRequest {
                 query: query.to_string(),
@@ -75,15 +90,11 @@ mod inner {
             let mut req = tonic::Request::new(request);
             req.set_timeout(self.config.timeout);
 
-            if let Some(username) = &self.config.username {
-                if let Ok(val) = username.parse::<MetadataValue<tonic::metadata::Ascii>>() {
-                    req.metadata_mut().insert("x-bzrk-username", val);
-                }
-            }
-            if let Some(client_name) = &self.config.client_name {
-                if let Ok(val) = client_name.parse::<MetadataValue<tonic::metadata::Ascii>>() {
-                    req.metadata_mut().insert("x-bzrk-client-name", val);
-                }
+            if let Some(token) = &self.config.token {
+                let val = format!("Bearer {token}")
+                    .parse::<MetadataValue<tonic::metadata::Ascii>>()
+                    .map_err(|e| Error::GrpcConnection(format!("invalid token: {e}")))?;
+                req.metadata_mut().insert("authorization", val);
             }
 
             let response = client

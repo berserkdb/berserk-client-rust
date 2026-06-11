@@ -3,9 +3,9 @@
 //! `print` query produces a column per value type, and each decoded cell
 //! is asserted.
 //!
-//! Set BERSERK_ENDPOINT to a *direct* query-service endpoint (e.g.
-//! query.bzrk.svc.cluster.local:9510). The client has no gateway auth
-//! support, so the authenticated edge won't work here.
+//! Set BERSERK_ENDPOINT to the gateway (e.g. localhost:9500) and
+//! BERSERK_TOKEN to a CLI bearer token. To run directly against a query
+//! service instead, set BERSERK_GRPC_PREFIX="".
 
 #![cfg(feature = "grpc")]
 
@@ -28,6 +28,13 @@ async fn all_value_types_decode() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("BERSERK_ENDPOINT not set, skipping");
         return Ok(());
     };
+    let mut config = Config::new(ep);
+    if let Ok(token) = std::env::var("BERSERK_TOKEN") {
+        config = config.with_token(token);
+    }
+    if let Ok(prefix) = std::env::var("BERSERK_GRPC_PREFIX") {
+        config = config.with_grpc_path_prefix(prefix);
+    }
 
     // One column per BqlValue oneof arm, plus in-oneof default values
     // (false / 0 / "") which proto3 oneof presence must keep
@@ -49,7 +56,7 @@ async fn all_value_types_decode() -> Result<(), Box<dyn std::error::Error>> {
   n = toint("not-a-number")"#
     );
 
-    let client = GrpcClient::new(Config::new(&ep));
+    let client = GrpcClient::new(config);
     let resp = client.query(&query, None, None, "UTC").await?;
 
     let table = resp

@@ -73,11 +73,8 @@ mod inner {
 
             let mut req = self.client.post(&url).json(&body);
 
-            if let Some(username) = &self.config.username {
-                req = req.header("x-bzrk-username", username);
-            }
-            if let Some(client_name) = &self.config.client_name {
-                req = req.header("x-bzrk-client-name", client_name);
+            if let Some(token) = &self.config.token {
+                req = req.header("authorization", format!("Bearer {token}"));
             }
 
             let resp = req.send().await.map_err(|e| Error::Http(e.to_string()))?;
@@ -88,10 +85,8 @@ mod inner {
                 return Err(Error::Http(format!("HTTP {}: {}", status, body)));
             }
 
-            let frames: Vec<V2Frame> = resp
-                .json()
-                .await
-                .map_err(|e| Error::Parse(e.to_string()))?;
+            let frames: Vec<V2Frame> =
+                resp.json().await.map_err(|e| Error::Parse(e.to_string()))?;
 
             let mut tables = Vec::new();
             let mut has_errors = false;

@@ -2,6 +2,13 @@
 
 Rust client library for the [Berserk](https://berserk.dev) observability platform.
 
+Clients connect to the **gateway** — the authenticated public edge — using a
+bearer token (a CLI access token from the device flow, or a service-principal
+token). The gateway authenticates the call and injects the trusted identity
+before forwarding to the query service. The gRPC surface is mounted under
+`/api/grpc`; the client applies that prefix by default (set
+`.with_grpc_path_prefix("")` to connect directly to a query service in dev).
+
 ## Features
 
 - **gRPC** (default) — Native gRPC streaming via tonic
@@ -22,7 +29,9 @@ use berserk_client::{Config, GrpcClient};
 
 #[tokio::main]
 async fn main() -> Result<(), berserk_client::Error> {
-    let client = GrpcClient::new(Config::new("http://localhost:9510"));
+    let config = Config::new("https://berserk.example.com")
+        .with_token(std::env::var("BERSERK_TOKEN").unwrap());
+    let client = GrpcClient::new(config);
     let response = client.query(
         "Logs | where severity == 'error' | take 10",
         None, None, "UTC",
@@ -47,7 +56,9 @@ use berserk_client::{Config, HttpClient};
 
 #[tokio::main]
 async fn main() -> Result<(), berserk_client::Error> {
-    let client = HttpClient::new(Config::new("http://localhost:9510"));
+    let config = Config::new("https://berserk.example.com")
+        .with_token(std::env::var("BERSERK_TOKEN").unwrap());
+    let client = HttpClient::new(config);
     let response = client.query("print v = 1").await?;
     println!("{:?}", response.tables);
     Ok(())
