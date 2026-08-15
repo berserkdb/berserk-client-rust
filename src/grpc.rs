@@ -85,6 +85,9 @@ mod inner {
                         self.config.database.clone(),
                     )),
                 }),
+                // Defaults for the rest, so a new request field added server-side
+                // doesn't break this client until it wants to use it.
+                ..Default::default()
             };
 
             let mut req = tonic::Request::new(request);
@@ -159,7 +162,7 @@ mod inner {
                     Some(query_proto::execute_query_result_frame::Payload::Metadata(m)) => {
                         for pf in m.partial_failures {
                             partial_failures.push(PartialFailure {
-                                segment_ids: pf.segment_ids,
+                                segment_count: pf.segment_count,
                                 message: pf.message,
                             });
                         }

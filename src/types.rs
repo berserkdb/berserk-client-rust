@@ -97,7 +97,9 @@ pub struct QueryWarning {
 /// Partial failure info for segments that couldn't be read.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartialFailure {
-    pub segment_ids: Vec<String>,
+    /// Segment ids are not exposed: they are internal storage identifiers
+    /// no client can act on.
+    pub segment_count: u64,
     pub message: String,
 }
 
